@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+.DS_Store
+.idea/
+.vscode/
+
+build/
+dist/
+*.egg-info/
+.eggs/
+
+.venv/
+venv/
+env/
+
+# generated reports / test data
+*_EDA_report.html
+*.tmp
