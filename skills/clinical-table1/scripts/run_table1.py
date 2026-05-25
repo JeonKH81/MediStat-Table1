@@ -34,9 +34,8 @@ import pandas as pd
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 import stats as st  # noqa: E402
-from render_html import render_html  # noqa: E402
-from render_docx import render_docx  # noqa: E402
-from render_latex import render_latex  # noqa: E402
+# Renderers imported lazily inside main() so a missing optional dependency
+# (e.g., python-docx) doesn't break formats that don't need it.
 
 
 # Designs where baseline p-values are discouraged (CONSORT 2010 / Senn 1994)
@@ -479,20 +478,37 @@ def main():
     outputs = []
     base = os.path.splitext(os.path.basename(input_path))[0]
 
+    skipped = []
+
     if "html" in formats:
-        out_html = os.path.join(out_dir, f"{base}_Table1.html")
-        render_html(rows, meta, out_html, fonts_dir=fonts_dir)
-        outputs.append(out_html)
+        try:
+            from render_html import render_html  # lazy
+            out_html = os.path.join(out_dir, f"{base}_Table1.html")
+            render_html(rows, meta, out_html, fonts_dir=fonts_dir)
+            outputs.append(out_html)
+        except ImportError as e:
+            skipped.append(f"html ({e.name} not installed)")
 
     if "docx" in formats:
-        out_docx = os.path.join(out_dir, f"{base}_Table1.docx")
-        render_docx(rows, meta, out_docx)
-        outputs.append(out_docx)
+        try:
+            from render_docx import render_docx  # requires python-docx
+            out_docx = os.path.join(out_dir, f"{base}_Table1.docx")
+            render_docx(rows, meta, out_docx)
+            outputs.append(out_docx)
+        except ImportError as e:
+            skipped.append(f"docx (python-docx not installed: pip install python-docx)")
 
     if "latex" in formats:
-        out_tex = os.path.join(out_dir, f"{base}_Table1.tex")
-        render_latex(rows, meta, out_tex)
-        outputs.append(out_tex)
+        try:
+            from render_latex import render_latex  # lazy
+            out_tex = os.path.join(out_dir, f"{base}_Table1.tex")
+            render_latex(rows, meta, out_tex)
+            outputs.append(out_tex)
+        except ImportError as e:
+            skipped.append(f"latex ({e.name} not installed)")
+
+    if skipped:
+        print("WARN skipped: " + "; ".join(skipped))
 
     print("OK " + " ".join(outputs))
 
